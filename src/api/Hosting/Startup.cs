@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using FluentValidation.AspNetCore;
 using Hellang.Middleware.ProblemDetails;
 using Libraries.Extensions.ProblemDetails;
 using Microsoft.AspNetCore.Http;
@@ -29,7 +30,15 @@ namespace Hosting
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers();
+            services
+                .AddControllers()
+                .AddFluentValidation(config =>
+                {
+                    // TODO Einbindung der anderen Assemblies
+                    config.RegisterValidatorsFromAssemblyContaining<Startup>();
+                    config.RunDefaultMvcValidationAfterFluentValidationExecutes = true;
+                });
+
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Hosting", Version = "v1" });

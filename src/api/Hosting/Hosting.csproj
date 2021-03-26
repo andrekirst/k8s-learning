@@ -17,10 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <ProjectReference Include="..\Domain.ShortUrl\Domain.ShortUrl.csproj" />
     <ProjectReference Include="..\Infrastructure.Api.MediatR\Infrastructure.Api.MediatR.csproj" />
     <ProjectReference Include="..\Libraries.Extensions.ProblemDetails\Libraries.Extensions.ProblemDetails.csproj" />
   </ItemGroup>

@@ -15,6 +15,9 @@ using FluentValidation.AspNetCore;
 using Hellang.Middleware.ProblemDetails;
 using Libraries.Extensions.ProblemDetails;
 using Microsoft.AspNetCore.Http;
+using Serilog;
+using Serilog.Events;
+using Serilog.Exceptions;
 
 namespace Hosting
 {
@@ -23,6 +26,15 @@ namespace Hosting
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
+
+            Log.Logger = new LoggerConfiguration()
+                .ReadFrom.Configuration(Configuration)
+                .WriteTo.Console()
+                .Enrich.FromLogContext()
+                .Enrich.WithProperty("ServiceName", "Api")
+                .Enrich.WithProperty("ServiceVersion", "v1")
+                .Enrich.WithExceptionDetails()
+                .CreateLogger();
         }
 
         public IConfiguration Configuration { get; }
@@ -54,8 +66,19 @@ namespace Hosting
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
         {
+            loggerFactory.AddSerilog();
+            app.UseSerilogRequestLogging(options =>
+            {
+                options.GetLevel = (_, _, _) => LogEventLevel.Debug;
+                options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+                {
+                    diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);
+                    diagnosticContext.Set("RequestScheme", httpContext.Request.Scheme);
+                };
+            });
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();

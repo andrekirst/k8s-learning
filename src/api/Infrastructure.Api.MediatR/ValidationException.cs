@@ -7,7 +7,7 @@ namespace Infrastructure.Api.MediatR
 {
     public class ValidationException : Exception
     {
-        public ValidationException(IEnumerable<ValidationFailure> validationFailures)
+        public ValidationException(IReadOnlyCollection<ValidationFailure> validationFailures)
             : base(GetFirstErrorMessage(validationFailures))
         {
             ValidationFailures = validationFailures;
@@ -18,11 +18,11 @@ namespace Infrastructure.Api.MediatR
         {
         }
 
-        public IEnumerable<ValidationFailure> ValidationFailures { get; private set; }
+        public IEnumerable<ValidationFailure>? ValidationFailures { get; private set; }
 
-        private static string GetFirstErrorMessage(IEnumerable<ValidationFailure> validationFailures)
+        private static string GetFirstErrorMessage(IEnumerable<ValidationFailure>? validationFailures)
         {
-            var failures = validationFailures.ToList();
+            var failures = validationFailures?.ToList() ?? new List<ValidationFailure>();
             return failures.Any() ? failures.First().ErrorMessage : "";
         }
     }

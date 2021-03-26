@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Infrastructure.Api.MediatR\Infrastructure.Api.MediatR.csproj" />
     <ProjectReference Include="..\Libraries.Extensions.ProblemDetails\Libraries.Extensions.ProblemDetails.csproj" />
   </ItemGroup>
 

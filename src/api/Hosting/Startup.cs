@@ -13,6 +13,7 @@ using Serilog;
 using Serilog.Events;
 using Serilog.Exceptions;
 using System;
+using Infrastructure.Api.MediatR;
 
 namespace Hosting
 {
@@ -34,9 +35,10 @@ namespace Hosting
 
         public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddApiMediatR(new[] { typeof(Startup).Assembly });
+
             services.AddHealthChecks()
                 .AddCheck<HealthCheck>("api");
 

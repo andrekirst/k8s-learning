@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: code-deployment
+  labels:
+    api: code
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      api: code
+  template:
+    metadata:
+      labels:
+        api: code
+    spec:
+      containers:
+        - name: code
+          image: kuberneteslearning/code:1.0
+          ports:
+            - containerPort: 80

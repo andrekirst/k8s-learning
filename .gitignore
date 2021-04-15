@@ -349,3 +349,4 @@ MigrationBackup/
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
 /src/faas-code/build
+/stories/01-ein-erster-dienst-wird-geboren/src/code/build

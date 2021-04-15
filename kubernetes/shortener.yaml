@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: shortener-db
+spec:
+  selector:
+    matchLabels:
+      api: shortener
+      kind: db
+  serviceName: shortener-db-service
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        api: shortener
+        kind: db
+    spec:
+      containers:
+      - name: shortener-db
+        image: postgres:13.2
+        volumeMounts:
+          - name: shortener-db-disk
+            mountPath: /var/lib/postgresql/data
+        env:
+          - name: POSTGRES_PASSWORD
+            value: 01031990Pc
+          - name: PGDATA
+            value: /var/lib/postgresql/data/pgdata
+  volumeClaimTemplates:
+  - metadata:
+      name: shortener-db-disk
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 10Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shortener-db-loadbalancer
+spec:
+  selector:
+    api: shortener
+    kind: db
+  type: LoadBalancer
+  ports:
+  - port: 5432
+    targetPort: 5432

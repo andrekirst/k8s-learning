@@ -1,6 +1,5 @@
 using FluentValidation.AspNetCore;
 using Hellang.Middleware.ProblemDetails;
-using Libraries.Extensions.ProblemDetails;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -13,7 +12,12 @@ using Serilog;
 using Serilog.Events;
 using Serilog.Exceptions;
 using System;
-using Infrastructure.Api.MediatR;
+using System.Net.Http;
+using Hosting.Domain.Database;
+using Hosting.Extensions.ProblemDetails;
+using Hosting.Infrastructure.MediatR;
+using Hosting.Services;
+using Microsoft.EntityFrameworkCore;
 
 namespace Hosting
 {
@@ -39,8 +43,27 @@ namespace Hosting
         {
             services.AddApiMediatR(new[] { typeof(Startup).Assembly });
 
+            services.AddSingleton<IUrlHasher, UrlHasher>();
+            services.AddScoped<IShortenUrlRepository, ShortenUrlRepository>();
+
             services.AddHealthChecks()
                 .AddCheck<HealthCheck>("api");
+
+            services
+                .AddDbContextPool<AppDbContext>(options =>
+                {
+                    options.UseNpgsql(Configuration["Database:ConnectionString"]);
+                });
+
+            services
+                .AddHttpClient("code", c =>
+                {
+                    c.BaseAddress = new Uri(Configuration["Api:Code:Url"]);
+                })
+                .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler()
+                {
+                    UseDefaultCredentials =  true
+                });
 
             services
                 .AddControllers()

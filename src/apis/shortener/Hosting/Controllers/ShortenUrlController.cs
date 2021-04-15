@@ -1,7 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Domain.ShortUrl.Commands;
-using Infrastructure.Api.MediatR;
+using Hosting.Domain.Commands;
+using Hosting.Infrastructure.MediatR;
 using JetBrains.Annotations;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;

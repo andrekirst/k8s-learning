@@ -2,7 +2,7 @@
 
 namespace Hosting.Infrastructure.MediatR
 {
-    public interface ICommandRequest : IRequest<IRequestResult>
+    public interface ICommand : IRequest<IRequestResult>
     {
         
     }

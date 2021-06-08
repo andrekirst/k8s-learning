@@ -7,13 +7,10 @@ EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:5.0-buster-slim AS build
 WORKDIR /src
-COPY ["Hosting/Hosting.csproj", "Hosting/"]
-COPY ["Domain.ShortUrl/Domain.ShortUrl.csproj", "Domain.ShortUrl/"]
-COPY ["Infrastructure.Api.MediatR/Infrastructure.Api.MediatR.csproj", "Infrastructure.Api.MediatR/"]
-COPY ["Libraries.Extensions.ProblemDetails/Libraries.Extensions.ProblemDetails.csproj", "Libraries.Extensions.ProblemDetails/"]
+COPY ["Hosting.csproj", "Hosting/"]
 RUN dotnet restore "Hosting/Hosting.csproj"
-COPY . .
 WORKDIR "/src/Hosting"
+COPY . .
 RUN dotnet build "Hosting.csproj" -c Release -o /app/build
 
 FROM build AS publish

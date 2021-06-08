@@ -6,7 +6,7 @@ namespace Hosting.Services
 {
     public interface ICodeServiceClient
     {
-        Task<string> GetCode(CancellationToken cancellationToken = default);
+        Task<string> CreateCode(CancellationToken cancellationToken = default);
     }
 
     public class CodeServiceClient : ICodeServiceClient
@@ -18,7 +18,7 @@ namespace Hosting.Services
             _clientFactory = clientFactory;
         }
 
-        public async Task<string> GetCode(CancellationToken cancellationToken = default)
+        public async Task<string> CreateCode(CancellationToken cancellationToken = default)
         {
             var client = _clientFactory.CreateClient("code");
             var code = await client.GetStringAsync("", cancellationToken);

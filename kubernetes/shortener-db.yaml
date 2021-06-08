@@ -5,15 +5,15 @@ metadata:
 spec:
   selector:
     matchLabels:
-      api: shortener
-      kind: db
+      service: shortener
+      # kind: db
   serviceName: shortener-db-service
   replicas: 1
   template:
     metadata:
       labels:
-        api: shortener
-        kind: db
+        service: shortener
+        # kind: db
     spec:
       containers:
       - name: shortener-db
@@ -41,8 +41,8 @@ metadata:
   name: shortener-db-loadbalancer
 spec:
   selector:
-    api: shortener
-    kind: db
+    service: shortener
+    # kind: db
   type: LoadBalancer
   ports:
   - port: 5432

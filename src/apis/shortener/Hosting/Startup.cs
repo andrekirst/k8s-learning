@@ -9,7 +9,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Serilog;
-using Serilog.Events;
 using Serilog.Exceptions;
 using System;
 using System.Net.Http;
@@ -17,14 +16,20 @@ using Hosting.Domain.Database;
 using Hosting.Extensions.ProblemDetails;
 using Hosting.Infrastructure.MediatR;
 using Hosting.Services;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Polly;
+using Polly.Extensions.Http;
 
 namespace Hosting
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        private readonly IWebHostEnvironment _webHostEnvironment;
+
+        public Startup(IConfiguration configuration, IWebHostEnvironment webHostEnvironment)
         {
+            _webHostEnvironment = webHostEnvironment;
             Configuration = configuration;
 
             Log.Logger = new LoggerConfiguration()
@@ -41,6 +46,7 @@ namespace Hosting
 
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddDistributedMemoryCache();
             services.AddApiMediatR(new[] { typeof(Startup).Assembly });
 
             services.AddSingleton<IUrlHasher, UrlHasher>();
@@ -55,6 +61,10 @@ namespace Hosting
                     options.UseNpgsql(Configuration["Database:ConnectionString"]);
                 });
 
+            var retryPolicy = HttpPolicyExtensions
+                .HandleTransientHttpError()
+                .WaitAndRetryAsync(3, retry => TimeSpan.FromSeconds(3));
+
             services
                 .AddHttpClient("code", c =>
                 {
@@ -63,15 +73,16 @@ namespace Hosting
                 .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler()
                 {
                     UseDefaultCredentials =  true
-                });
+                })
+                .AddPolicyHandler(retryPolicy);
+            services.AddScoped<ICodeServiceClient, CodeServiceClient>();
 
             services
                 .AddControllers()
                 .AddFluentValidation(config =>
                 {
-                    // TODO Einbindung der anderen Assemblies
                     config.RegisterValidatorsFromAssemblyContaining<Startup>();
-                    config.RunDefaultMvcValidationAfterFluentValidationExecutes = true;
+                    config.RunDefaultMvcValidationAfterFluentValidationExecutes = false;
                 });
 
             services.AddSwaggerGen(c =>
@@ -86,15 +97,34 @@ namespace Hosting
                 options.Map<ArgumentException>((_, exception) => exception.ToStatusCodeProblemDetails(StatusCodes.Status400BadRequest));
                 options.Map<ArgumentNullException>((_, exception) => exception.ToStatusCodeProblemDetails(StatusCodes.Status400BadRequest));
             });
+
+            services
+                .AddMassTransit(c =>
+                {
+                    c.UsingRabbitMq((context, cfg) =>
+                    {
+                        var host = Configuration["Messaging:Host"] ?? "localhost";
+                        var username = Configuration["Messaging:Username"] ?? "guest";
+                        var password = Configuration["Messaging:Password"] ?? "guest";
+
+                        cfg.ConfigureEndpoints(context);
+                        cfg.Host(host, h =>
+                        {
+                            h.Password(password);
+                            h.Username(username);
+                        });
+                        cfg.MessageTopology.SetEntityNameFormatter(new EnvironmentNameFormatter(cfg.MessageTopology.EntityNameFormatter, _webHostEnvironment));
+                    });
+                });
+
+            services.AddMassTransitHostedService();
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory, AppDbContext appDbContext)
         {
             loggerFactory.AddSerilog();
             app.UseSerilogRequestLogging(options =>
             {
-                options.GetLevel = (_, _, _) => LogEventLevel.Debug;
                 options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
                 {
                     diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);
@@ -113,13 +143,15 @@ namespace Hosting
 
             app.UseRouting();
 
-            app.UseAuthorization();
+            //app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
                 endpoints.MapHealthChecks("/health");
             });
+
+            appDbContext.Database.Migrate();
         }
     }
 }

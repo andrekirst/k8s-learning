@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using Hosting.Domain.Commands;
 using Hosting.Infrastructure.MediatR;
-using JetBrains.Annotations;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -19,7 +18,9 @@ namespace Hosting.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> ShortenUrl([FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Disallow)] ShortenUrlRequestModel model, CancellationToken cancellationToken = default)
-            => await ExecuteRequestAsync(new ShortenUrl(model.Url), cancellationToken);
+        public async Task<IActionResult> ShortenUrl(
+            [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Disallow)] ShortenUrlRequestModel model,
+            CancellationToken cancellationToken = default)
+            => await ExecuteRequestAsync(new ShortenUrlCommand(model.Url), cancellationToken);
     }
 }

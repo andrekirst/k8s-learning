@@ -1,25 +1,33 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: code-deployment
+  name: shortener-api-deployment
   labels:
-    service: code
-    kind: function
+    service: shortener
+    # kind: api
 spec:
-  replicas: 2
+  replicas: 5
   selector:
     matchLabels:
-      service: code
-      kind: function
+      service: shortener
+      # kind: api
   template:
     metadata:
       labels:
-        service: code
-        kind: function
+        service: shortener
+        # kind: api
     spec:
       containers:
-        - name: code
-          image: kuberneteslearning/code:1.0
+        - name: shortener-api
+          image: kuberneteslearning/shortener.api:1.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: API__CODE__URL
+              value: http://code:80
+            - name: DATABASE__CONNECTIONSTRING
+              value: Host=shortener-db-loadbalancer;Database=ShortenUrl;Username=postgres;Password=01031990Pc
+            - name: MESSAGING__HOST
+              value: messaging-management-service
           ports:
             - containerPort: 80
               name: http
@@ -39,40 +47,40 @@ spec:
             timeoutSeconds: 3
           resources:
             limits:
-              memory: "256Mi"
-              cpu: "500m"
+              memory: "1024Mi"
+              cpu: "750m"
 ---
 kind: Service
 apiVersion: v1
 metadata:
-  name:  code-service
+  name:  shortner-api-service
   labels:
-    service: code
-    kind: function
+    service: shortener
+    # kind: api
 spec:
   selector:
-    service: code
-    kind: function
+    service: shortener
+    # kind: api
   type:  LoadBalancer
   ports:
   - name: http
-    port: 8080
+    port: 8081
     targetPort: 80
-    nodePort: 30080
+    nodePort: 30081
 ---
 apiVersion: v1
 kind: Service
 metadata:
   # The required headless service for StatefulSets
-  name: code
+  name: shortner-api
   labels:
-    service: code
-    kind: function
+    service: shortener
+    # kind: api
 spec:
   ports:
   - port: 80
     name: http
   clusterIP: None
   selector:
-    service: code
-    kind: function
+    service: shortener
+    kind: api
